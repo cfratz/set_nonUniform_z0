@@ -20,8 +20,8 @@ Installation:
 Example usage:
 Setting z0 to a ground patch:
 setZ0 0/nut -entry boundaryField.terrain.z0 -setZ0Ground terrain 
--writeCoords -writeZ0
+[optional] -writeCoords -writeZ0
 
 Set z0 to inlet patch:
 setZ0 0/epsilon -entry boundaryField.inlet.z0 -setZ0Inlet inlet 
--writeCoords -writeZ0
+[optional] -writeCoords -writeZ0
