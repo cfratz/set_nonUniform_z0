@@ -3,7 +3,7 @@ Aplication for setting nonUniform z0 (C++).
 It is based on foamDictionary, an application for managing dictionary entries.
 Author: Christina Fratzeskou
 
-Tested on OpenFoam 7.
+Tested on OpenFoam 7 on Ubuntu 18.04LTS.
 
 Requirements:
 - An installation of OpenFoam 7
