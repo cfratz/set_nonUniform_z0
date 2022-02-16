@@ -160,16 +160,13 @@ void exportCf(const vectorField& face_centers, const fvBoundaryMesh& bMesh, labe
         Info << "Writing coordinates to xyz file..." << endl;
         OFstream outputfile("Cf_coords.xyz");
         outputfile << "xyz\n";
-	const labelUList inCells = bMesh[patch].faceCells();
         //Iterate through the ground faces and store to array the ground face centers coordinate
 	forAll(face_centers, facei)
         {
 		 scalar x_coord = face_centers[facei].x();
 		 scalar y_coord = face_centers[facei].y();
 		 scalar z_coord = face_centers[facei].z();
-		 label bCell = inCells[facei];
-		 label gfacei = bMesh[patch].start() + facei;
-		 outputfile << x_coord << " " << y_coord << " " << z_coord << " " << gfacei << " " << bCell << endl;  
+		 outputfile << x_coord << " " << y_coord << " " << z_coord << endl;  
 	}
 }
 
