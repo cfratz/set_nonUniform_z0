@@ -1,0 +1,49 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+Description
+    Writes out surface files with interpolated field data in VTK format, e.g.
+    cutting planes, iso-surfaces and patch boundary surfaces.
+
+    This file includes a selection of example surfaces, each of which the user
+    should configure and/or remove.
+
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      setZ0;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+    inputFile     "constant/triSurface/terrain4nonUniformInlet_translated.obj" ;
+    inputMtl      "constant/triSurface/terrain.mtl";
+    
+    /*landcovers_list   
+    (Terrain,Water,Green);*/
+    
+    z0_values      
+    {  
+        Terrain     0.05;
+        Water       0.0002;
+        Green       0.03;
+    }
+    
+    Params_Inlet
+    {  
+        Uref        10;
+        Zref        20;
+        flowDir     (1 0 0);
+        Cmu        0.09;
+        kappa       0.41;
+    }      
+
+
+// ************************************************************************* //
