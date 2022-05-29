@@ -1277,7 +1277,7 @@ int main(int argc, char *argv[])
 						        for (int rit=checkPoints.size()-1; rit>=0; rit--)
 						        {	   
 							        prev_facei = checkPoints[rit];
-							        if (Cf[prev_facei].y() > Cf[cur_facei].y())
+							        if (Cf[prev_facei].component(dirIdx) > Cf[cur_facei].component(dirIdx))
 							        {
 									continue;
 							        }
@@ -1315,23 +1315,6 @@ int main(int argc, char *argv[])
 				       Info << checkPoints[i] << nl;
 				       Info << "z0 terrain " << z0patch[checkPoints[i]] << endl;
 			       } 
-
-		  	       /*double cur;
-			       double old = z0patch[0];
-			       forAll(z0patch, facei)
-			        {     
-			              cur = z0patch[facei];
-				      if ((cur != old) && (cur != double(0)))
-                                      {
-			                      isUniform = false;
-					      export2Vtk(mesh, patch_name, z0patch);
-			                      break;
-		                      }
-                                      old = cur;
-			        }*/
-				//dictionary paramsInlet =  d.subDict("Params_Inlet");
-				//        double Uref = paramsInlet.lookup("Uref");
-			        //List<double> tkeOutlet(Cf.size(),double(0));
 				if (isUniform == false)
 			        { 
 				       DynamicList<double> checkPointsCoords; 
