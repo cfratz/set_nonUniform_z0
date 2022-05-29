@@ -570,14 +570,14 @@ void assignParam(List<double>& cfCoord, DynamicList<int>& checkPoints, DynamicLi
 			int previous_facei = checkPoints[i-1];
 			double previous_checkCoord = checkPointCoords[i-1];
 			double next_checkCoord = checkPointCoords[i];
-	        
-			if (z0[facei] == 0) //case inlet only;firstRow is already assigned
-			{
-				if (((previous_checkCoord - cur_coord) < 0) && ((cur_coord - next_checkCoord) < 0))
-				{
-					patchParam[facei] = z0[previous_facei];
-				}
-			}
+	                
+			if (patchParam[facei] == 0) //to avoid reassigning z0 to inlet first row
+			{	
+			        if (((previous_checkCoord - cur_coord) < 0) && ((cur_coord - next_checkCoord) < 0))
+			        {
+				        patchParam[facei] = z0[previous_facei];
+			        }
+			}	
 		}
 		if (size_pts != size_coords)// case where last column has different z0
 		{
@@ -595,7 +595,7 @@ void assignParam(List<double>& cfCoord, DynamicList<int>& checkPoints, DynamicLi
 }
 //Write start/end of nonUniform list entry
 void writeNonUniform(const dictionary& d, List<double>& vals, string name)
-{       
+{      
 	entry* ePtr = nullptr;
 	std::ostringstream is;
 	string s;
@@ -614,7 +614,7 @@ void writeNonUniform(const dictionary& d, List<double>& vals, string name)
 	const_cast<dictionary&>(d).set(ePtr);
 }
 
-void calculateParams(dictionary d, List<double>& z0, List<double>& tke, List<double>& te)
+void calculateParams(dictionary& d, List<double>& z0, List<double>& tke, List<double>& te)
 {
 	dictionary paramsInlet = d.subDict("Params_Inlet");
 	double Uref; double kappa; double Zref; double Cmu;
@@ -1222,7 +1222,6 @@ int main(int argc, char *argv[])
 															isEmpty = false;
 															is.putBack(fieldToken);
 															is >> groundZ0;
-															Info << "assigned terrain z0 is: " << groundZ0[56] << endl;
 														}
 
 													}
@@ -1315,9 +1314,23 @@ int main(int argc, char *argv[])
 				       Info << checkPoints[i] << nl;
 				       Info << "z0 terrain " << z0patch[checkPoints[i]] << endl;
 			       } 
+
+		  	       /*double cur;
+			       double old = z0patch[0];
+			       forAll(z0patch, facei)
+			        {     
+			              cur = z0patch[facei];
+				      if ((cur != old) && (cur != double(0)))
+                                      {
+			                      isUniform = false;
+					      export2Vtk(mesh, patch_name, z0patch);
+			                      break;
+		                      }
+                                      old = cur;
+			        }*/
 				if (isUniform == false)
 			        { 
-				       DynamicList<double> checkPointsCoords; 
+				       DynamicList<double> checkPointsCoords;
 				       for (int i = 0; i < checkPoints.size(); i++)
 				       {
 						int facei = checkPoints[i];
@@ -1359,7 +1372,7 @@ int main(int argc, char *argv[])
 					assignParam(inletSpanCoord, checkPoints, checkPointsCoords, z0patch, z0patch);
 						
 					if (args.optionFound("setParams"))
-					{
+					{      
 						List<double> tkeInlet(Cf.size(), double(0));
 						List<double> teInlet(Cf.size(), double(0));
 
@@ -1368,21 +1381,22 @@ int main(int argc, char *argv[])
 						writeNonUniform(d, tkeInlet, "tke_inlet");
 						writeNonUniform(d, teInlet, "te_inlet");
 
-						forAll(boundaryMesh, patchi)
+						forAll(boundaryMesh, i)
 						{
-							if (boundaryMesh[patchi].type() == "wall")
+							if (boundaryMesh[i].type() == "wall")
 							{
-								word patchName = boundaryMesh[patchi].name();
-								const vectorField& gCf = boundaryMesh[patchi].Cf();
+								word patchName = boundaryMesh[i].name();
+								const vectorField& gCf = boundaryMesh[i].Cf();
 								List<double> tke(gCf.size(), double(0));
 								List<double> te(gCf.size(), double(0));
 								List<double> gZ0(gCf.size(), double(0));
 
-								List<scalar> spanwiseCoord(Cf.size(), double(0));
+								List<scalar> spanwiseCoord(gCf.size(), double(0));
 								forAll(spanwiseCoord, facei)
 								{
 									spanwiseCoord[facei] = gCf[facei].component(dirIdx);
 								}
+
 								assignParam(spanwiseCoord, checkPoints, checkPointsCoords, z0patch, gZ0);
 								calculateParams(myDict, gZ0, tke, te);
 
@@ -1390,7 +1404,7 @@ int main(int argc, char *argv[])
 								string teEntry = "te_" + patchName;
 								writeNonUniform(d, tke, tkeEntry);
 								writeNonUniform(d, te, teEntry);
-                                                                
+
 								if (args.optionFound("exportToVtk"))
 								{	
 								        export2Vtk(mesh, patchName, gZ0, "inlet_z0_to");
@@ -1547,4 +1561,5 @@ int main(int argc, char *argv[])
 
 
 // ************************************************************************* //
+
 
