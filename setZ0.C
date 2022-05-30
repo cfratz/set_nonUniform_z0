@@ -1258,7 +1258,6 @@ int main(int argc, char *argv[])
                             }
 			    //Iterate through inlet's first row and keep changes of z0
 			    //as inlet facei id in checkpoints list
-			    int prev_facei = 0;
 			    int last_facei = 0;
 		            checkPoints.append(0);
                             forAll(is_firstRow, f)
@@ -1266,40 +1265,43 @@ int main(int argc, char *argv[])
 				    if ((f != 0) && (is_firstRow[f] == 1))
 				    {      
 					     int cur_facei = f;
+					     int prev_facei = checkPoints[checkPoints.size()-1];
 					     if ((z0patch[prev_facei] != z0patch[cur_facei]) && (Cf[prev_facei].component(dirIdx) < Cf[cur_facei].component(dirIdx)))
 					     { 
-                                                        checkPoints.append(f);
-							prev_facei = checkPoints[checkPoints.size()-1];
+                                                        checkPoints.append(cur_facei);
 					     }   
-					     else if ((z0patch[prev_facei] != z0patch[cur_facei]) && (Cf[prev_facei].component(dirIdx) > Cf[cur_facei].component(dirIdx)))
+					     else if (Cf[prev_facei].component(dirIdx) > Cf[cur_facei].component(dirIdx))
 					     {           
 						        for (int rit=checkPoints.size()-1; rit>=0; rit--)
 						        {	   
 							        prev_facei = checkPoints[rit];
-							        if (Cf[prev_facei].component(dirIdx) > Cf[cur_facei].component(dirIdx))
-							        {
+								if (Cf[prev_facei].component(dirIdx) > Cf[cur_facei].component(dirIdx))
+                                                                {
 									continue;
-							        }
+								}
 								else
-							        {
-									if (z0patch[prev_facei] != z0patch[cur_facei])	
-								        {       
-										int pos = rit+1;//insert new checkpoint at pos
-										checkPoints.append(checkPoints[checkPoints.size()-1]);
-							 			for (int i=checkPoints.size()-2; i>pos; i--)
-										{
-											    checkPoints[i] = checkPoints[i-1];
-										}		   
-										checkPoints[pos] = f;
+								{
+								        if (z0patch[prev_facei] != z0patch[cur_facei])
+									{
+                                                                                int pos = rit+1;//insert new checkPoint at pos
+									    	if (z0patch[checkPoints[pos]] != z0patch[cur_facei])
+										{	
+										        checkPoints.append(checkPoints[checkPoints.size()-1]);
+							 			        for (int i=checkPoints.size()-2; i>pos; i--)
+										        {
+											        checkPoints[i] = checkPoints[i-1];
+										        }
+								                }			 
+										checkPoints[pos] = cur_facei;
 									}	
 									break;
 								}
+					
 							}
-							prev_facei = checkPoints[checkPoints.size()-1];
 					        }
 					        if (Cf[cur_facei].component(dirIdx) > Cf[last_facei].component(dirIdx))
 					        {
-							last_facei = f;
+							last_facei = cur_facei;
 					        }		 
 				       }				                 
 			       }
@@ -1336,6 +1338,7 @@ int main(int argc, char *argv[])
 						int facei = checkPoints[i];
 						//global index of inlet face
 						label globalFaceIdx = boundaryMesh[patchi].start() + facei;
+						Info << "globalFaceIdx " << globalFaceIdx << endl;
 						const face& nodes = mesh.faces()[globalFaceIdx];
 						List<scalar> spanCoord(nodes.size());
                                                 forAll(nodes,nodei)
@@ -1364,6 +1367,10 @@ int main(int argc, char *argv[])
 						}
 					}
 					checkPointsCoords.shrink();
+					forAll(checkPointsCoords,cooI)
+					{
+					       Info << "Coords y :  " << checkPointsCoords[cooI] << nl;
+				        }	       
 					List<scalar> inletSpanCoord(Cf.size(), double(0));
 					forAll(inletSpanCoord, facei)
 					{
