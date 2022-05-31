@@ -246,13 +246,13 @@ void checkMtl(const fileName& MtlfileName, dictionary& landcoverDict)
 		}
          }
 
-	 if ((landcovers.empty() == true) || (landcovers.size() != landcoverNames.size()))
+	/* if ((landcovers.empty() == true) || (landcovers.size() != landcoverNames.size()))
 	 {
 		 FatalError
 		     << "Check that landcovers in the mtl file " << nl
 		     << MtlfileName << " match the input landcovers in dictionary." << nl
 		     << exit(FatalError);
-	 } 
+	 }*/
 	 Info << MtlfileName << " OK. " << nl << endl;
 	      //<< "Landcover information of mtl file match setZ0Dict."<< endl; 
 }
@@ -401,13 +401,13 @@ void exportZ0(List<double>& z0List)
 }
 
 //Assign z0 values to face centers based on built-in octree search of nearest point
-int assignZ0(triSurface& surf, const vectorField& faceCenters, List<double>& triZ0, List<double>& z0List, word& patchName)
+int assignZ0(triSurface& surf, const vectorField& faceCenters, List<double>& triZ0, List<double>& z0List, word& patchName, double& val)
 {       
 	/* Following block of code from surfaceToPoint.C
 	 * Link: https://github.com/OpenFOAM/OpenFOAM-7/blob/master/src/meshTools/sets/pointSources/surfaceToPoint/surfaceToPoint.C */
         
 	Info << "Assigning z0 to patch " << patchName << " face centers..." << nl << endl;
-
+        
         //Construct search engine on surface
 	triSurfaceSearch querySurf(surf);
 
@@ -419,6 +419,7 @@ int assignZ0(triSurface& surf, const vectorField& faceCenters, List<double>& tri
 
 	List<pointIndexHit> inter;
         querySurf.findNearest(faceCenters,nearDist,inter);
+	
 	forAll(faceCenters, facei)
 	{
 		const point& pt = faceCenters[facei];
@@ -430,7 +431,14 @@ int assignZ0(triSurface& surf, const vectorField& faceCenters, List<double>& tri
 		}
 		else
 		{
-			nNotAssigned += 1;
+			if (val != 0)
+		        {
+			       z0List[facei] = val;
+			}
+		        else
+			{
+			       nNotAssigned += 1;
+		        }	       
 		}
 	}
     
@@ -895,6 +903,12 @@ int main(int argc, char *argv[])
 	"setParams",
 	"Set parameters related to the turbulence model."
     );
+    argList::addOption
+    (
+         "setZ0NoGeom",
+	 "value",
+	 "Set a value for the patch that has no corresponding geometry"
+    );
     argList::addOption 
     (
 	"exportVtkPython",
@@ -960,7 +974,7 @@ int main(int argc, char *argv[])
 	    const bool setInletZ0 = args.optionFound("setZ0Inlet");
             const bool merge = false; // used for add
 	    const bool z0Python = args.optionFound("exportVtkPython");
-             
+            
             Pair<word> dAk(dictAndKeyword(scopedName));
             const dictionary& d(lookupScopedDict(dict, dAk.first()));
             entry* ePtr = nullptr;
@@ -1108,8 +1122,18 @@ int main(int argc, char *argv[])
 
 			if (setGroundZ0)
 			{
-			       //isUniform = false; // 0, this option is only meant for nonUniform patches else, [option] -set
-			       notAssigned = assignZ0(surf, Cf, z0tri, z0patch, patch_name);
+			       double z0val; // Need to test and check
+			       if (args.optionReadIfPresent("setZ0NoGeom", z0val))
+			       {
+			               Info << z0val << endl;	       
+			               //isUniform = false; // 0, this option is only meant for nonUniform patches else, [option] -set
+			               notAssigned = assignZ0(surf, Cf, z0tri, z0patch, patch_name, z0val);
+			       }
+			       else
+			       {
+				       z0val = 0;
+			               notAssigned = assignZ0(surf, Cf, z0tri, z0patch, patch_name, z0val);
+			       }	       
 			       
 			       Info << "For " << notAssigned << " face centers, out of " << boundaryMesh[patchi].size() << ", the z0 could not be assigned. " << endl; 
 
@@ -1568,5 +1592,6 @@ int main(int argc, char *argv[])
 
 
 // ************************************************************************* //
+
 
 
