@@ -411,7 +411,7 @@ int assignZ0(triSurface& surf, const vectorField& faceCenters, List<double>& tri
         //Construct search engine on surface
 	triSurfaceSearch querySurf(surf);
 
-	float dist = 0.8; //Needs tuning	
+	float dist = 1000;//0.8; //Needs tuning	
 	int nNotAssigned = 0;
 	//Box dimensions to search in octree.
 	const vector span(dist, dist, dist);
@@ -425,7 +425,10 @@ int assignZ0(triSurface& surf, const vectorField& faceCenters, List<double>& tri
 		const point& pt = faceCenters[facei];
 		
                 if (inter[facei].hit() && (mag(inter[facei].hitPoint() - pt) < dist))
-		{
+		{       
+			Info << "triangle is: " << inter[facei].index() << nl;
+			Info << "dist is: " << dist << "mag(inter[facei].hitPoint() - pt) is: " << mag(inter[facei].hitPoint() - pt) << nl;
+			Info << "inter[facei].hitPoint() is: " << inter[facei].hitPoint() << " pt is: " << pt << nl;
 			int triIndex = inter[facei].index();
 			z0List[facei] = triZ0[triIndex];
 		}
@@ -581,23 +584,16 @@ void assignParam(List<double>& cfCoord, DynamicList<int>& checkPoints, DynamicLi
 	                
 			if (patchParam[facei] == 0) //to avoid reassigning z0 to inlet first row
 			{	
-			        if (((previous_checkCoord - cur_coord) < 0) && ((cur_coord - next_checkCoord) < 0))
+			        if (((previous_checkCoord - cur_coord) < 0) && ((cur_coord - next_checkCoord) <= 0))
 			        {
 				        patchParam[facei] = z0[previous_facei];
 			        }
 			}	
-		}
-		if (size_pts != size_coords)// case where last column has different z0
+	        }
+		if ((patchParam[facei] == 0) && (size_pts != size_coords))// case where last column has different z0
 		{
 			int last_facei = checkPoints[size_pts];
-			int previous_idx = size_coords - 1;
-			int next_idx = size_coords;
-			double previous_checkCoord = checkPointCoords[previous_idx];
-			double next_checkCoord = checkPointCoords[next_idx];
-			if (((previous_checkCoord - cur_coord) < 0) && ((cur_coord - next_checkCoord) < 0))
-			{
-				patchParam[facei] = z0[last_facei];
-			}
+		        patchParam[facei] = z0[last_facei];
 		}
 	}
 }
@@ -777,48 +773,6 @@ const dictionary& lookupScopedDict
     }
 }
 
-
-void remove(dictionary& dict, const dictionary& removeDict)
-{
-    forAllConstIter(dictionary, removeDict, iter)
-    {
-        const entry* entPtr = dict.lookupEntryPtr
-        (
-            iter().keyword(),
-            false,
-            false
-        );
-
-        if (entPtr)
-        {
-            if (entPtr->isDict())
-            {
-                if (iter().isDict())
-                {
-                    remove
-                    (
-                        const_cast<dictionary&>(entPtr->dict()),
-                        iter().dict()
-                    );
-
-                    // Check if dictionary is empty
-                    if (!entPtr->dict().size())
-                    {
-                        dict.remove(iter().keyword());
-                    }
-                }
-            }
-            else if (!iter().isDict())
-            {
-                if (*entPtr == iter())
-                {
-                    dict.remove(iter().keyword());
-                }
-            }
-        }
-    }
-}
-
 int main(int argc, char *argv[])
 {   
     #include "removeCaseOptions.H"
@@ -826,49 +780,8 @@ int main(int argc, char *argv[])
     writeInfoHeader = false;
 
     argList::addNote("manipulates dictionaries");
-    argList::validArgs.append("dictionary file");
-    argList::addBoolOption("keywords", "list keywords");
     argList::addOption("entry", "name", "report/select the named entry");
-    argList::addBoolOption
-    (
-        "value",
-        "Print entry value"
-    );
-    argList::addOption
-    (
-        "set",
-        "value",
-        "Set entry value or add new entry"
-    );
-    argList::addOption
-    (
-        "add",
-        "value",
-        "Add a new entry"
-    );
-   
-    argList::addBoolOption
-    (
-        "remove",
-        "Remove the entry."
-    );
-   
-    argList::addBoolOption
-    (
-        "includes",
-        "List the #include/#includeIfPresent files to standard output"
-    );
-    argList::addBoolOption
-    (
-        "expand",
-        "Read the specified dictionary file, expand the macros etc. and write "
-        "the resulting dictionary to standard output"
-    );
-    argList::addBoolOption
-    (
-        "disableFunctionEntries",
-        "Disable expansion of dictionary directives - #include, #codeStream etc"
-    );
+ 
     argList::addBoolOption
     ( 
         "writeCoords",
@@ -938,21 +851,6 @@ int main(int argc, char *argv[])
 
     bool changed = false;
 
-    if (listIncludes)
-    {
-        return 0;
-    }
-    else if (args.optionFound("expand"))
-    {
-        IOobject::writeBanner(Info)
-            <<"//\n// " << dictFileName << "\n//\n";
-        dict.write(Info, false);
-        IOobject::writeDivider(Info);
-
-        return 0;
-    }
-
-
     word entryName;
     if (args.optionReadIfPresent("entry", entryName))
     {
@@ -960,625 +858,497 @@ int main(int argc, char *argv[])
 
         string newValue;
 	word patch_name;
-        if
-        (
-            args.optionReadIfPresent("set", newValue)
-	 || args.optionReadIfPresent("setZ0Ground", patch_name)
-	 || args.optionReadIfPresent("setZ0Inlet", patch_name)
-         || args.optionReadIfPresent("add", newValue)
-	 || args.optionReadIfPresent("exportVtkPython", patch_name)
-        )
-        {
-            const bool overwrite = args.optionFound("set");
-	    const bool setGroundZ0 = args.optionFound("setZ0Ground");
-	    const bool setInletZ0 = args.optionFound("setZ0Inlet");
-            const bool merge = false; // used for add
-	    const bool z0Python = args.optionFound("exportVtkPython");
-            
-            Pair<word> dAk(dictAndKeyword(scopedName));
-            const dictionary& d(lookupScopedDict(dict, dAk.first()));
-            entry* ePtr = nullptr;
+	if
+		(
+			args.optionReadIfPresent("setZ0Ground", patch_name)
+			|| args.optionReadIfPresent("setZ0Inlet", patch_name)
+			|| args.optionReadIfPresent("exportVtkPython", patch_name)
+			)
+	{
+		// const bool overwrite = args.optionFound("set");
+		const bool setGroundZ0 = args.optionFound("setZ0Ground");
+		const bool setInletZ0 = args.optionFound("setZ0Inlet");
+		//const bool merge = false; // used for add
+		const bool z0Python = args.optionFound("exportVtkPython");
 
-	    if (setGroundZ0 || setInletZ0 || z0Python)
-            { 
-	       
-	          //Access case's fvMesh object
-	          //const fvMesh& meshi = runTime.lookupObject<fvMesh>("mesh"); //not possible not registered
-	          ////time_db().parent.lookupObject<defaultRegion>("fvmesh");
-	          //Info << meshi.meshDir() <<endl;
-		  cpuTime timer;
-	          Info << "Creating instance of fvMesh..." << endl;
-                  
-	          fvMesh mesh
-	          (
-		        IOobject
-		        (
-			      fvMesh::defaultRegion,
-			      runTime.timeName(),   //if snappy timeName = 2
-			      runTime,
-		              IOobject::MUST_READ,
-			      IOobject::NO_WRITE,
-			      false			
-		        )  
-	          );
+		Pair<word> dAk(dictAndKeyword(scopedName));
+		const dictionary& d(lookupScopedDict(dict, dAk.first()));
+		entry* ePtr = nullptr;
 
-		  Info << "Finished creating fvMesh instance in " << timer.cpuTimeIncrement() << " s" << endl;
+		if (setGroundZ0 || setInletZ0 || z0Python)
+		{
 
-	          //Check if the input patch exists in boundary mesh and return index
-	          const fvBoundaryMesh& boundaryMesh = mesh.boundary();
-	          label patchi = boundaryMesh.findPatchID(patch_name);
-		  std::ostringstream is;
-	          string s;
+			//Access case's fvMesh object
+			//const fvMesh& meshi = runTime.lookupObject<fvMesh>("mesh"); //not possible not registered
+			////time_db().parent.lookupObject<defaultRegion>("fvmesh");
+			//Info << meshi.meshDir() <<endl;
+			cpuTime timer;
+			Info << "Creating instance of fvMesh..." << endl;
 
-		  Info << "Checking specified patch..." << endl;
-	          if (patchi < 0)
-	          {
-		         FatalError
-		             << "Unable to find patch " << patch_name << nl
-		             << exit(FatalError);
-	          }
- 	          else
-	          {
-		        //Store all face centers of patch in vector field
-		        const vectorField& Cf = boundaryMesh[patchi].Cf();
-                        
-			check_patch(boundaryMesh, patchi, setGroundZ0, z0Python);
+			fvMesh mesh
+			(
+				IOobject
+				(
+					fvMesh::defaultRegion,
+					runTime.timeName(),   //if snappy timeName = 2
+					runTime,
+					IOobject::MUST_READ,
+					IOobject::NO_WRITE,
+					false
+				)
+			);
 
-			IOdictionary myDict
-		        (
-                             IOobject
-			     (
-			           "setZ0Dict",
-				   runTime.constant(),
-				   runTime,
-				   IOobject::MUST_READ
-			     )
-                        );
+			Info << "Finished creating fvMesh instance in " << timer.cpuTimeIncrement() << " s" << endl;
 
-			if (args.optionFound("writeCoords"))
-		        {
-		             exportCf(Cf,mesh,patchi);
-			}
+			//Check if the input patch exists in boundary mesh and return index
+			const fvBoundaryMesh& boundaryMesh = mesh.boundary();
+			label patchi = boundaryMesh.findPatchID(patch_name);
+			std::ostringstream is;
+			string s;
 
-		        //Load the input .mtl file
-		        const fileName& MtlFileName(fileName(myDict.lookup("inputMtl")).expand());
-                      		
-			if (MtlFileName.ext() != "mtl")
+			Info << "Checking specified patch..." << endl;
+			if (patchi < 0)
 			{
 				FatalError
-				    << "The input semantics file " << MtlFileName << nl
-				    << "is not an '.mtl' file." << nl
-				    << exit(FatalError);
+					<< "Unable to find patch " << patch_name << nl
+					<< exit(FatalError);
 			}
-		       
-		        //Check mtl file is good
-		        checkMtl(MtlFileName, myDict.subDict("z0_values"));
-
-		        //Load the input triangulation
-		        const fileName& surfName_(fileName(myDict.lookup("inputFile")).expand());
-                     
-		        //Check if the input triangulation is in obj format
-		        if (surfName_.ext() != "obj")
-		        {
-			       FatalError
-			           << "The input geometry  " << surfName_ << nl
-			           << "is in " << surfName_.ext() << " ." << nl 
-			           << "An .obj file is required. " << nl
-			           << exit(FatalError);
-		        }
-
-		        triSurface surf(surfName_);
-		        const label surf_size = surf.faces().size(); //triangles number
-
-		        List<double> z0tri(surf_size); //list of z0 per triangle
-			z02triangle(surfName_, MtlFileName, myDict.subDict("z0_values"), z0tri);
-
-			bool isUniform = 0;
-		        int notAssigned = 0;	
-			List<double> z0patch(Cf.size(),double(0)); //list to be filled with z0 per patch face
-
-			if (z0Python)
+			else
 			{
-				//const fileName& z0Python(fileName(myDict.lookup("inputZ0")).expand());
-				//List<double> z0ListPython(Cf.size(),double(0));
-			        IFstream z0PythonFile("z0.txt");	
-				int i = 0;
-                                
-				while (z0PythonFile.good())
-			        {       
-					string line = getNoCommentLine(z0PythonFile);
-					/*label sz = line.size();
-		                	if (sz && line[sz-1] == '\\')
+				//Store all face centers of patch in vector field
+				const vectorField& Cf = boundaryMesh[patchi].Cf();
+
+				check_patch(boundaryMesh, patchi, setGroundZ0, z0Python);
+
+				IOdictionary myDict
+				(
+					IOobject
+					(
+						"setZ0Dict",
+						runTime.constant(),
+						runTime,
+						IOobject::MUST_READ
+					)
+				);
+
+				if (args.optionFound("writeCoords"))
+				{
+					exportCf(Cf, mesh, patchi);
+				}
+
+				//Load the input .mtl file
+				const fileName& MtlFileName(fileName(myDict.lookup("inputMtl")).expand());
+
+				if (MtlFileName.ext() != "mtl")
+				{
+					FatalError
+						<< "The input semantics file " << MtlFileName << nl
+						<< "is not an '.mtl' file." << nl
+						<< exit(FatalError);
+				}
+
+				//Check mtl file is good
+				checkMtl(MtlFileName, myDict.subDict("z0_values"));
+
+				//Load the input triangulation
+				const fileName& surfName_(fileName(myDict.lookup("inputFile")).expand());
+
+				//Check if the input triangulation is in obj format
+				if (surfName_.ext() != "obj")
+				{
+					FatalError
+						<< "The input geometry  " << surfName_ << nl
+						<< "is in " << surfName_.ext() << " ." << nl
+						<< "An .obj file is required. " << nl
+						<< exit(FatalError);
+				}
+
+				triSurface surf(surfName_);
+				const label surf_size = surf.faces().size(); //triangles number
+
+				List<double> z0tri(surf_size); //list of z0 per triangle
+				z02triangle(surfName_, MtlFileName, myDict.subDict("z0_values"), z0tri);
+
+				bool isUniform = 0;
+				int notAssigned = 0;
+				List<double> z0patch(Cf.size(), double(0)); //list to be filled with z0 per patch face
+
+				if (z0Python)
+				{
+					//const fileName& z0Python(fileName(myDict.lookup("inputZ0")).expand());
+					//List<double> z0ListPython(Cf.size(),double(0));
+					IFstream z0PythonFile("z0.txt");
+					int i = 0;
+
+					while (z0PythonFile.good())
 					{
-						line.substr(0, sz-1);
-						line += getNoCommentLine(z0PythonFile);
-					}*/
-
-					// Read first word
-					IStringStream lineStream(line);
-					string::size_type openparNum = line.find('(', 0);
-					string::size_type closeparNum = line.find(')', 0);
-					string::size_type endNum = line.find(';', 0);
-					if ((openparNum != string::npos) || (closeparNum != string::npos))
-					{
-						continue;
-					}
-					else if (endNum != string::npos)
-					{ 
-						break;
-					}
-					else
-					{
-						double z0val;
-						lineStream >> z0val;
-						if (z0val != Cf.size())
-					        {		
-						      z0patch[i] = z0val;
-						      i++;
-						}
-					}
-			       }
-			}
-
-			if (setGroundZ0)
-			{
-			       double z0val; // Need to test and check
-			       if (args.optionReadIfPresent("setZ0NoGeom", z0val))
-			       {
-			               Info << z0val << endl;	       
-			               //isUniform = false; // 0, this option is only meant for nonUniform patches else, [option] -set
-			               notAssigned = assignZ0(surf, Cf, z0tri, z0patch, patch_name, z0val);
-			       }
-			       else
-			       {
-				       z0val = 0;
-			               notAssigned = assignZ0(surf, Cf, z0tri, z0patch, patch_name, z0val);
-			       }	       
-			       
-			       Info << "For " << notAssigned << " face centers, out of " << boundaryMesh[patchi].size() << ", the z0 could not be assigned. " << endl; 
-
-			      /* if (notAssigned != 0) //assuming that the code works perfectly
-			       {
-                                      FatalError
-					  << "The specified patch " << patch_name << nl
-					  << " does not match the " << nl
-					  << "the input geometry." << nl
-					  << exit(FatalError);
-                               }*/
-			       
-		                //From https://cpp.openfoam.org/v6/fvMesh_8C_source.html#l00246
-		                /*void Foam::fvMesh::clearOut() 
-			        clearAddressing();    
-			        triSurface::~triSurface(); or triSurface::~clearOut();*/
-            }
-            else if (setInletZ0)
-	    {
-			       isUniform = true; // 1 
-                   const labelUList& inletCells = boundaryMesh[patchi].faceCells();
-				   vector dir;
-				   int dirIdx;
-				   dictionary paramsInlet = myDict.subDict("Params_Inlet");
-				   paramsInlet.lookup("flowDir") >> dir;
-                                  
-				   if (dir[0] == 1)
-				   {
-					   dirIdx = 1;
-				   }
-				   else if (dir[1] == 1)
-				   {
-					   dirIdx = 0;
-				   }
-
-                               DynamicList<int> checkPoints;
-			       List<int> is_firstRow(Cf.size(),0);
-        
-			       forAll(boundaryMesh, patchg)
-			       {                    
-			             if (boundaryMesh[patchg].type() == "wall")
-			              {      
-								int neighbor=0;
-								word patchg_name = boundaryMesh[patchg].name();
-								const labelUList& patchCells = boundaryMesh[patchg].faceCells();
-								double dval;
-								bool isEmpty = true; //for checking whether there is an input z0 for other patches
-								//Create list for ground patch
-								List<double> groundZ0;
-
-								forAll(inletCells, facei)
-								{	
-									//bCell is global index of cell
-									const label& bCell = inletCells[facei];
-									auto found = std::find(patchCells.begin(), patchCells.end(), bCell);
-									if (found != patchCells.end())
-									{
-										if (neighbor == 0)
-										{
-											neighbor++;
-											dictionary dnut;
-											readDict(dnut, "0/nut");
-											string patchgPath = "boundaryField." + patchg_name;
-											const dictionary& patchgDict(lookupScopedDict(dnut, word(patchgPath)));
-											const entry* z0EntPtr = patchgDict.lookupScopedEntryPtr
-											(
-												"z0",
-												false,
-												true
-											);
-											if (!z0EntPtr)
-											{
-												FatalIOErrorInFunction(dnut)
-													<< "Can not find entry " << "z0 for wallPatch " << patchg_name
-													<< exit(FatalIOError);
-											}
-											if (z0EntPtr->isStream())
-											{
-												ITstream& is = z0EntPtr->stream();
-												token firstToken(is);
-												if (firstToken.isNumber())
-												{
-													isEmpty = false;
-													is.putBack(firstToken);
-													is >> dval;
-													Info << "dval " << dval << nl << endl;
-												}
-												else if (firstToken.isWord()
-													&& firstToken.wordToken() == "uniform")
-												{
-												        token fieldToken(is);
-												        if (fieldToken.isNumber())
-													{
-													        isEmpty = false;
-														is.putBack(fieldToken);
-														is >> dval;
-														Info << "dval " << dval << nl << endl;
-													}
-												}	
-												else 
-												{
-
-													if (firstToken.isWord()
-														&& firstToken.wordToken() == "nonuniform")
-													{
-														token fieldToken(is);
-														if (fieldToken.isCompound()
-															&& fieldToken.compoundToken().type() == token::Compound<List<scalar>>::typeName)
-														{
-															isEmpty = false;
-															is.putBack(fieldToken);
-															is >> groundZ0;
-														}
-
-													}
-							
-												}
-											}
-										}
-										//Assign z0
-										auto gfacei = std::distance(patchCells.begin(), found);
-							   
-										if (groundZ0.size()!=0)
-										{		         
-										        z0patch[facei] = groundZ0[gfacei];
-										}
-										else
-										{
-											if (isEmpty == true)
-											{
-												FatalError
-													<< "A z0 value for patch " << patchg_name << nl
-													<< "has not been specified in 0/nut dictionary." << nl
-													<< exit(FatalError);
-											}
-											else
-											{
-												z0patch[facei] = dval;
-											}
-										}
-										is_firstRow[facei] = 1;
-									}	     
-								}
-								
-			               }		      
-                            }
-			    //Iterate through inlet's first row and keep changes of z0
-			    //as inlet facei id in checkpoints list
-			    int last_facei = 0;
-		            checkPoints.append(0);
-                            forAll(is_firstRow, f)
-			    {
-				    if ((f != 0) && (is_firstRow[f] == 1))
-				    {      
-					     int cur_facei = f;
-					     int prev_facei = checkPoints[checkPoints.size()-1];
-					     if ((z0patch[prev_facei] != z0patch[cur_facei]) && (Cf[prev_facei].component(dirIdx) < Cf[cur_facei].component(dirIdx)))
-					     { 
-                                                        checkPoints.append(cur_facei);
-					     }   
-					     else if (Cf[prev_facei].component(dirIdx) > Cf[cur_facei].component(dirIdx))
-					     {           
-						        for (int rit=checkPoints.size()-1; rit>=0; rit--)
-						        {	   
-							        prev_facei = checkPoints[rit];
-								if (Cf[prev_facei].component(dirIdx) > Cf[cur_facei].component(dirIdx))
-                                                                {
-									continue;
-								}
-								else
-								{
-								        if (z0patch[prev_facei] != z0patch[cur_facei])
-									{
-                                                                                int pos = rit+1;//insert new checkPoint at pos
-									    	if (z0patch[checkPoints[pos]] != z0patch[cur_facei])
-										{	
-										        checkPoints.append(checkPoints[checkPoints.size()-1]);
-							 			        for (int i=checkPoints.size()-2; i>pos; i--)
-										        {
-											        checkPoints[i] = checkPoints[i-1];
-										        }
-								                }			 
-										checkPoints[pos] = cur_facei;
-									}	
-									break;
-								}
-					
-							}
-					        }
-					        if (Cf[cur_facei].component(dirIdx) > Cf[last_facei].component(dirIdx))
-					        {
-							last_facei = cur_facei;
-					        }		 
-				       }				                 
-			       }
-			       if ((checkPoints.size() != 1) && (checkPoints[checkPoints.size()-1] != last_facei))
-			       {	       
-					checkPoints.append(last_facei);
-					isUniform = false;
-			       }	       
-			       checkPoints.shrink();
-			       for (int i =0;i<checkPoints.size();i++)
-			       { 
-				       Info << checkPoints[i] << nl;
-				       Info << "z0 terrain " << z0patch[checkPoints[i]] << endl;
-			       } 
-
-		  	       /*double cur;
-			       double old = z0patch[0];
-			       forAll(z0patch, facei)
-			        {     
-			              cur = z0patch[facei];
-				      if ((cur != old) && (cur != double(0)))
-                                      {
-			                      isUniform = false;
-					      export2Vtk(mesh, patch_name, z0patch);
-			                      break;
-		                      }
-                                      old = cur;
-			        }*/
-				if (isUniform == false)
-			        { 
-				       DynamicList<double> checkPointsCoords;
-				       for (int i = 0; i < checkPoints.size(); i++)
-				       {
-						int facei = checkPoints[i];
-						//global index of inlet face
-						label globalFaceIdx = boundaryMesh[patchi].start() + facei;
-						Info << "globalFaceIdx " << globalFaceIdx << endl;
-						const face& nodes = mesh.faces()[globalFaceIdx];
-						List<scalar> spanCoord(nodes.size());
-                                                forAll(nodes,nodei)
-					        {      
-						       int idx = nodes[nodei];
-						       spanCoord[nodei] = mesh.points()[idx][dirIdx];	
-                                                }
-						scalar maxCoord = max(spanCoord);
-						scalar minCoord = min(spanCoord);
-						
-						if (i == checkPoints.size() - 1)//consider isolated last column of different z0 
+						string line = getNoCommentLine(z0PythonFile);
+						/*label sz = line.size();
+								if (sz && line[sz-1] == '\\')
 						{
-							if(z0patch[facei] != z0patch[checkPoints[i-1]])
-							{
-								checkPointsCoords.append(minCoord);
-								checkPointsCoords.append(maxCoord);
-							}
-							else 
-							{
-								checkPointsCoords.append(maxCoord);
-							}
+							line.substr(0, sz-1);
+							line += getNoCommentLine(z0PythonFile);
+						}*/
+
+						// Read first word
+						IStringStream lineStream(line);
+						string::size_type openparNum = line.find('(', 0);
+						string::size_type closeparNum = line.find(')', 0);
+						string::size_type endNum = line.find(';', 0);
+						if ((openparNum != string::npos) || (closeparNum != string::npos))
+						{
+							continue;
+						}
+						else if (endNum != string::npos)
+						{
+							break;
 						}
 						else
 						{
-							checkPointsCoords.append(minCoord);
-						}
-					}
-					checkPointsCoords.shrink();
-					forAll(checkPointsCoords,cooI)
-					{
-					       Info << "Coords y :  " << checkPointsCoords[cooI] << nl;
-				        }	       
-					List<scalar> inletSpanCoord(Cf.size(), double(0));
-					forAll(inletSpanCoord, facei)
-					{
-						inletSpanCoord[facei] = Cf[facei].component(dirIdx);
-					}
-					assignParam(inletSpanCoord, checkPoints, checkPointsCoords, z0patch, z0patch);
-						
-					if (args.optionFound("setParams"))
-					{      
-						List<double> tkeInlet(Cf.size(), double(0));
-						List<double> teInlet(Cf.size(), double(0));
-
-						calculateParams(myDict, z0patch, tkeInlet, teInlet);
-
-						writeNonUniform(d, tkeInlet, "tke_inlet");
-						writeNonUniform(d, teInlet, "te_inlet");
-
-						forAll(boundaryMesh, i)
-						{
-							if (boundaryMesh[i].type() == "wall")
+							double z0val;
+							lineStream >> z0val;
+							if (z0val != Cf.size())
 							{
-								word patchName = boundaryMesh[i].name();
-								const vectorField& gCf = boundaryMesh[i].Cf();
-								List<double> tke(gCf.size(), double(0));
-								List<double> te(gCf.size(), double(0));
-								List<double> gZ0(gCf.size(), double(0));
-
-								List<scalar> spanwiseCoord(gCf.size(), double(0));
-								forAll(spanwiseCoord, facei)
-								{
-									spanwiseCoord[facei] = gCf[facei].component(dirIdx);
-								}
-
-								assignParam(spanwiseCoord, checkPoints, checkPointsCoords, z0patch, gZ0);
-								calculateParams(myDict, gZ0, tke, te);
-
-								string tkeEntry = "tke_" + patchName;
-								string teEntry = "te_" + patchName;
-								writeNonUniform(d, tke, tkeEntry);
-								writeNonUniform(d, te, teEntry);
-
-								if (args.optionFound("exportToVtk"))
-								{	
-								        export2Vtk(mesh, patchName, gZ0, "inlet_z0_to");
-								}	
+								z0patch[i] = z0val;
+								i++;
 							}
 						}
 					}
-	                        }
-	                }
-                        //Write z0 list to the specified file as a nonuniform list
-			if (isUniform) //setZ0Ground = 0, setZ0Inlet = (0 || 1)
-	                {
-	                        is << "uniform" << " " << z0patch[0] << ';';			
-                        }
-			else
-		        {
-		                is << "nonuniform List<scalar>" << nl << z0patch.size() << nl
-			           << '(' << nl;
-		                for(int w=0; w<z0patch.size(); w++)
-			        {
-			                is << z0patch[w] << nl;
-			        }
-		                is << ')' << ';';
-		        }
+				}
 
-	                if (args.optionFound("writeZ0"))
-		        {
-		                exportZ0(z0patch);
-	                }
-			if (args.optionFound("exportToVtk"))
-			{
-				export2Vtk(mesh, patch_name, z0patch,"z0");
-			}	
-		 }	
-		 s = is.str();
-		 IStringStream str(string(dAk.second()) + " " + s);
-		 ePtr = entry::New(str).ptr();
-	  }
-          else
-          {       
-                  IStringStream str(string(dAk.second()) + ' ' + newValue + ';');
-                  ePtr = entry::New(str).ptr();
+				if (setGroundZ0)
+				{
+					double z0val; // Need to test and check
+					if (args.optionReadIfPresent("setZ0NoGeom", z0val))
+					{
+						Info << z0val << endl;
+						//isUniform = false; // 0, this option is only meant for nonUniform patches else, [option] -set
+						notAssigned = assignZ0(surf, Cf, z0tri, z0patch, patch_name, z0val);
+					}
+					else
+					{
+						z0val = 0;
+						notAssigned = assignZ0(surf, Cf, z0tri, z0patch, patch_name, z0val);
+					}
 
-          }
-          
-          if (overwrite  || setGroundZ0  || setInletZ0 || z0Python)
-          {
-                  const_cast<dictionary&>(d).set(ePtr); //this actually clears the old ptr and uses add(entryPtr,true)     
-          }
-          else
-          {
-                  const_cast<dictionary&>(d).add(ePtr, merge); //for "add" uses add(entryPtr,false), this makes sense for checking if entry exists. Called from option <add> 
-          }
-          changed = true;
+					Info << "For " << notAssigned << " face centers, out of " << boundaryMesh[patchi].size() << ", the z0 could not be assigned. " << endl;
 
-            // Print the changed entry
-            // const entry* entPtr = dict.lookupScopedEntryPtr
-            // (
-            //     scopedName,
-            //     false,
-            //     true            // Support wildcards
-            // );
-            // if (entPtr)
-            // {
-            //     Info<< *entPtr;
-            // }
-        }
-        else if (args.optionFound("remove"))
-        {
-            // Extract dictionary name and keyword
-            Pair<word> dAk(dictAndKeyword(scopedName));
-           
-            const dictionary& d(lookupScopedDict(dict, dAk.first()));
-            const_cast<dictionary&>(d).remove(dAk.second());
-            changed = true;
-        }
-        else
-        {
-              const entry* entPtr = dict.lookupScopedEntryPtr
-              (
-                 scopedName,
-                 false,
-                 true            // Support wildcards
-              );
+					/* if (notAssigned != 0) //assuming that the code works perfectly
+					 {
+										FatalError
+						<< "The specified patch " << patch_name << nl
+						<< " does not match the " << nl
+						<< "the input geometry." << nl
+						<< exit(FatalError);
+								 }*/
 
-              if (entPtr)
-              {
-                 if (args.optionFound("keywords"))
-                 {
-                     const dictionary& dict = entPtr->dict();
-                     forAllConstIter(dictionary, dict, iter)
-                     {
-                         Info<< iter().keyword() << endl;
-                     }
-                 }
-                 else
-                 {
-                     if (args.optionFound("value"))
-                     {
-                         if (entPtr->isStream())
-                         {
-                             const tokenList& tokens = entPtr->stream();
-                             forAll(tokens, i)
-                             {
-                                 Info<< tokens[i];
-                                 if (i < tokens.size() - 1)
-                                 {
-                                     Info<< token::SPACE;
-                                 }
-                             }
-                             Info<< endl;
-                         } 
-                         else if (entPtr->isDict())
-                         {
-                             Info<< entPtr->dict();
-                         }
-                     }
-                     else
-                     {
-                         Info<< *entPtr;
-                     }
-                  }
-              }
-              else
-              {
-                 FatalIOErrorInFunction(dict)
-                    << "Cannot find entry " << entryName
-                    << exit(FatalIOError, 2);
-              }
-         } 
-    }
-    else if (args.optionFound("keywords"))
-    {
-        forAllConstIter(dictionary, dict, iter)
-        {
-            Info<< iter().keyword() << endl;
-        }
-    }
-    else
-    {
-        dict.write(Info, false);
-    }
+								 //From https://cpp.openfoam.org/v6/fvMesh_8C_source.html#l00246
+								 /*void Foam::fvMesh::clearOut()
+							 clearAddressing();
+							 triSurface::~triSurface(); or triSurface::~clearOut();*/
+				}
+				else if (setInletZ0)
+				{
+					isUniform = true; // 1 
+					const labelUList& inletCells = boundaryMesh[patchi].faceCells();
+					vector dir;
+					int dirIdx;
+					dictionary paramsInlet = myDict.subDict("Params_Inlet");
+					paramsInlet.lookup("flowDir") >> dir;
 
+					if (dir[0] == 1)
+					{
+						dirIdx = 1;
+					}
+					else if (dir[1] == 1)
+					{
+						dirIdx = 0;
+					}
+
+					DynamicList<int> checkPoints;
+					DynamicList<Tuple2<int, double>> is_firstRow;
+
+					forAll(boundaryMesh, patchg)
+					{
+						if (boundaryMesh[patchg].type() == "wall")
+						{
+							int neighbor = 0;
+							word patchg_name = boundaryMesh[patchg].name();
+							const labelUList& patchCells = boundaryMesh[patchg].faceCells();
+							double dval;
+							bool isEmpty = true; //for checking whether there is an input z0 for other patches
+							//Create list for ground patch
+							List<double> groundZ0;
+
+							forAll(inletCells, facei)
+							{
+								//bCell is global index of cell
+								const label& bCell = inletCells[facei];
+								auto found = std::find(patchCells.begin(), patchCells.end(), bCell);
+								if (found != patchCells.end())
+								{
+									if (neighbor == 0)
+									{
+										neighbor++;
+										dictionary dnut;
+										readDict(dnut, "0/nut");
+										string patchgPath = "boundaryField." + patchg_name;
+										const dictionary& patchgDict(lookupScopedDict(dnut, word(patchgPath)));
+										const entry* z0EntPtr = patchgDict.lookupScopedEntryPtr
+										(
+											"z0",
+											false,
+											true
+										);
+										if (!z0EntPtr)
+										{
+											FatalIOErrorInFunction(dnut)
+												<< "Can not find entry " << "z0 for wallPatch " << patchg_name
+												<< exit(FatalIOError);
+										}
+										if (z0EntPtr->isStream())
+										{
+											ITstream& is = z0EntPtr->stream();
+											token firstToken(is);
+											if (firstToken.isNumber())
+											{
+												isEmpty = false;
+												is.putBack(firstToken);
+												is >> dval;
+												Info << "dval " << dval << nl << endl;
+											}
+											else if (firstToken.isWord()
+												&& firstToken.wordToken() == "uniform")
+											{
+												token fieldToken(is);
+												if (fieldToken.isNumber())
+												{
+													isEmpty = false;
+													is.putBack(fieldToken);
+													is >> dval;
+													Info << "dval " << dval << nl << endl;
+												}
+											}
+											else
+											{
+
+												if (firstToken.isWord()
+													&& firstToken.wordToken() == "nonuniform")
+												{
+													token fieldToken(is);
+													if (fieldToken.isCompound()
+														&& fieldToken.compoundToken().type() == token::Compound<List<scalar>>::typeName)
+													{
+														isEmpty = false;
+														is.putBack(fieldToken);
+														is >> groundZ0;
+													}
+
+												}
+
+											}
+										}
+									}
+									//Assign z0
+									auto gfacei = std::distance(patchCells.begin(), found);
+
+									if (groundZ0.size() != 0)
+									{
+										z0patch[facei] = groundZ0[gfacei];
+									}
+									else
+									{
+										if (isEmpty == true)
+										{
+											FatalError
+												<< "A z0 value for patch " << patchg_name << nl
+												<< "has not been specified in 0/nut dictionary." << nl
+												<< exit(FatalError);
+										}
+										else
+										{
+											z0patch[facei] = dval;
+										}
+									}
+									is_firstRow.append(Tuple2<int, double>(facei, Cf[facei].component(dirIdx)));
+								}
+							}
+
+						}
+					}
+					is_firstRow.shrink();
+					//Sort list according to coords[dirIdx] to avoid the non linear indexing of the faces
+					auto comparator = [](const Tuple2<int, double>& t1, const Tuple2<int, double>& t2) {return t1.second() < t2.second(); };
+					std::stable_sort(is_firstRow.begin(), is_firstRow.end(), comparator);
+					//Info << is_firstRow << endl; 
+					//Iterate through inlet's first row and keep changes of z0
+					//as inlet facei id in checkpoints list
+					int last_facei = is_firstRow[is_firstRow.size() - 1].first();
+					checkPoints.append(0);
+					forAll(is_firstRow, f)
+					{
+						if (f != 0)
+						{
+							int cur_facei = is_firstRow[f].first();
+							int prev_facei = checkPoints[checkPoints.size() - 1];
+							if (z0patch[prev_facei] != z0patch[cur_facei])
+							{
+								checkPoints.append(cur_facei);
+							}
+						}
+					}
+					if ((checkPoints.size() != 1) && (checkPoints[checkPoints.size() - 1] != last_facei))
+					{
+						checkPoints.append(last_facei);
+						isUniform = false;
+					}
+					checkPoints.shrink();
+					for (int i = 0; i < checkPoints.size(); i++)
+					{
+						Info << checkPoints[i] << nl;
+						Info << "z0 terrain " << z0patch[checkPoints[i]] << endl;
+					}
+
+					if (isUniform == false)
+					{
+						DynamicList<double> checkPointsCoords;
+						for (int i = 0; i < checkPoints.size(); i++)
+						{
+							int facei = checkPoints[i];
+							//global index of inlet face
+							label globalFaceIdx = boundaryMesh[patchi].start() + facei;
+							Info << "globalFaceIdx " << globalFaceIdx << endl;
+							const face& nodes = mesh.faces()[globalFaceIdx];
+							List<scalar> spanCoord(nodes.size());
+							forAll(nodes, nodei)
+							{
+								int idx = nodes[nodei];
+								spanCoord[nodei] = mesh.points()[idx][dirIdx];
+							}
+							scalar maxCoord = max(spanCoord);
+							scalar minCoord = min(spanCoord);
+
+							if (i == checkPoints.size() - 1)
+							{
+								if (z0patch[facei] != z0patch[checkPoints[i - 1]])//consider isolated last column of different z0
+								{
+									checkPointsCoords.append(minCoord);
+									checkPointsCoords.append(maxCoord);
+								}
+								else
+								{
+									checkPointsCoords.append(maxCoord);
+								}
+							}
+							else
+							{
+								checkPointsCoords.append(minCoord);
+							}
+						}
+						checkPointsCoords.shrink();
+						forAll(checkPointsCoords, cooI)
+						{
+							Info << "Coords y :  " << checkPointsCoords[cooI] << nl;
+						}
+						List<scalar> inletSpanCoord(Cf.size(), double(0));
+						forAll(inletSpanCoord, facei)
+						{
+							inletSpanCoord[facei] = Cf[facei].component(dirIdx);
+						}
+						assignParam(inletSpanCoord, checkPoints, checkPointsCoords, z0patch, z0patch);
+
+						if (args.optionFound("setParams"))
+						{
+							List<double> tkeInlet(Cf.size(), double(0));
+							List<double> teInlet(Cf.size(), double(0));
+
+							calculateParams(myDict, z0patch, tkeInlet, teInlet);
+
+							string tkeEntry = "tke_" + patch_name;
+							string teEntry = "te_" + patch_name;
+
+							writeNonUniform(d, tkeInlet, tkeEntry);
+							writeNonUniform(d, teInlet, teEntry);
+
+							forAll(boundaryMesh, i)
+							{
+								if (boundaryMesh[i].type() == "wall")
+								{
+									word patchName = boundaryMesh[i].name();
+									const vectorField& gCf = boundaryMesh[i].Cf();
+									List<double> tke(gCf.size(), double(0));
+									List<double> te(gCf.size(), double(0));
+									List<double> gZ0(gCf.size(), double(0));
+
+									List<scalar> spanwiseCoord(gCf.size(), double(0));
+									forAll(spanwiseCoord, facei)
+									{
+										spanwiseCoord[facei] = gCf[facei].component(dirIdx);
+									}
+
+									assignParam(spanwiseCoord, checkPoints, checkPointsCoords, z0patch, gZ0);
+									calculateParams(myDict, gZ0, tke, te);
+
+									tkeEntry = "tke_" + patchName;
+									teEntry = "te_" + patchName;
+									writeNonUniform(d, tke, tkeEntry);
+									writeNonUniform(d, te, teEntry);
+
+									if (args.optionFound("exportToVtk"))
+									{
+										export2Vtk(mesh, patchName, gZ0, "inlet_z0_to");
+									}
+								}
+							}
+						}
+					}
+				}
+				//Write z0 list to the specified file as a nonuniform list
+				if (isUniform) //setZ0Ground = 0, setZ0Inlet = (0 || 1)
+				{
+					is << "uniform" << " " << z0patch[0] << ';';
+				}
+				else
+				{
+					is << "nonuniform List<scalar>" << nl << z0patch.size() << nl
+						<< '(' << nl;
+					for (int w = 0; w < z0patch.size(); w++)
+					{
+						is << z0patch[w] << nl;
+					}
+					is << ')' << ';';
+				}
+
+				if (args.optionFound("writeZ0"))
+				{
+					exportZ0(z0patch);
+				}
+				if (args.optionFound("exportToVtk"))
+				{
+					export2Vtk(mesh, patch_name, z0patch, "z0");
+				}
+			}
+			s = is.str();
+			IStringStream str(string(dAk.second()) + " " + s);
+			ePtr = entry::New(str).ptr();
+		}
+		/*else
+		{
+				IStringStream str(string(dAk.second()) + ' ' + newValue + ';');
+				ePtr = entry::New(str).ptr();
+
+		}*/
+
+		if (setGroundZ0 || setInletZ0 || z0Python)//overwrite  || setGroundZ0  || setInletZ0 || z0Python)
+		{
+			const_cast<dictionary&>(d).set(ePtr); //this actually clears the old ptr and uses add(entryPtr,true)     
+		}
+		/*else
+		{
+				const_cast<dictionary&>(d).add(ePtr, merge); //for "add" uses add(entryPtr,false), this makes sense for checking if entry exists. Called from option <add>
+		}*/
+		changed = true;
+	}
     if (changed)
     {  
         OFstream os(dictFileName, dictFormat);
@@ -1592,6 +1362,3 @@ int main(int argc, char *argv[])
 
 
 // ************************************************************************* //
-
-
-
