@@ -832,18 +832,6 @@ int main(int argc, char *argv[])
     
     #include "setRootCase.H"
     #include "createTime.H"
-    const bool listIncludes = args.optionFound("includes");
-
-    if (listIncludes)
-    {
-        Foam::functionEntries::includeEntry::log = true;
-    }
-
-    if (args.optionFound("disableFunctionEntries"))
-    {
-        entry::disableFunctionEntries = true;
-    }
-
 
     const fileName dictFileName(args[1]);
     dictionary dict;
@@ -1332,21 +1320,12 @@ int main(int argc, char *argv[])
 			IStringStream str(string(dAk.second()) + " " + s);
 			ePtr = entry::New(str).ptr();
 		}
-		/*else
-		{
-				IStringStream str(string(dAk.second()) + ' ' + newValue + ';');
-				ePtr = entry::New(str).ptr();
-
-		}*/
 
 		if (setGroundZ0 || setInletZ0 || z0Python)//overwrite  || setGroundZ0  || setInletZ0 || z0Python)
 		{
 			const_cast<dictionary&>(d).set(ePtr); //this actually clears the old ptr and uses add(entryPtr,true)     
 		}
-		/*else
-		{
-				const_cast<dictionary&>(d).add(ePtr, merge); //for "add" uses add(entryPtr,false), this makes sense for checking if entry exists. Called from option <add>
-		}*/
+
 		changed = true;
 	}
     if (changed)
