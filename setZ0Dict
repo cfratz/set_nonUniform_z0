@@ -25,9 +25,8 @@ FoamFile
 
     inputFile     "constant/triSurface/terrain4nonUniformInlet_translated.obj" ;
     inputMtl      "constant/triSurface/terrain.mtl";
-    
-    /*landcovers_list   
-    (Terrain,Water,Green);*/
+    flowDir     (1 0 0);
+    nearDist    0.8;
     
     z0_values      
     {  
@@ -40,7 +39,6 @@ FoamFile
     {  
         Uref        10;
         Zref        20;
-        flowDir     (1 0 0);
         Cmu        0.09;
         kappa       0.41;
     }      
