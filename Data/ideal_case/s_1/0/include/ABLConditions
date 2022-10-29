@@ -1,0 +1,25 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Uref            10;
+Zref            20;
+zDir            ( 0 0 1 );
+flowDir         ( 1 0 0 );
+z0              uniform 0.05;
+zGround         uniform 930;
+flowVelocity    ( 10 0 0 );
+
+pressure        0;
+
+z0Inlet         0.05;
+Ustar              #calc "($Uref*0.41)/(log(($Zref+$z0Inlet)/$z0Inlet))";
+
+turbulentKE        #calc "(pow($Ustar,2))/(sqrt(0.09))";
+
+turbulentEpsilon   #calc "(pow($Ustar,3))/(0.41*($Zref+$z0Inlet))";
+
+// ************************************************************************* //

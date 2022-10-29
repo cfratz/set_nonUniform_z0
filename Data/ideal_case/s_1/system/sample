@@ -1,0 +1,104 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      sample;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+type sets;
+libs            ("libsampling.so");
+
+interpolationScheme cellPoint;
+
+setFormat       raw;
+
+sets
+(
+ lineX1
+    {
+        type       lineUniform;
+        axis        z;
+        start   (121.125 435 930);
+        end     (121.125 435 960);
+        nPoints     200;
+    }
+
+ lineX2
+    {
+        type       lineUniform;
+        axis        z;
+        start   (363.375 435 930);
+        end     (363.375 435 960);
+        nPoints     200;
+    }
+
+ lineX3
+    {
+        type       lineUniform;
+        axis        z;
+        start   (605.625 435 930);
+        end     (605.625 435 960);
+        nPoints     200;
+    }
+
+ lineX4
+    {
+        type       lineUniform;
+        axis        z;
+        start   (847.875 435 930);
+        end     (847.875 435 960);
+        nPoints     200;
+    }
+ 
+ lineX5
+    {
+        type       lineUniform;
+        axis        z;
+        start   (121.125 435 930);
+        end     (121.125 435 932);
+        nPoints     40;
+    }
+
+ lineX6
+    {
+        type       lineUniform;
+        axis        z;
+        start   (363.375 435 930);
+        end     (363.375 435 932);
+        nPoints     40;
+    }
+
+ lineX7
+    {
+        type       lineUniform;
+        axis        z;
+        start   (605.625 435 930);
+        end     (605.625 435 932);
+        nPoints     40;
+    }
+
+ lineX8
+    {
+        type       lineUniform;
+        axis        z;
+        start   (847.875 435 930);
+        end     (847.875 435 932);
+        nPoints     40;
+    }
+
+ );
+
+fields          (U epsilon nut p k);
+
+
+// ************************************************************************* //
