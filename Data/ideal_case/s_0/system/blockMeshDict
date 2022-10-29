@@ -1,0 +1,114 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version         2.0;
+    format          ascii;
+    class           dictionary;
+    object          blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+convertToMeters 1;
+
+//Extent of area of interest
+x_min 0;
+x_max 969;
+y_min 0;
+y_max 870;
+z_min 930;
+z_max 1140;
+
+H 35;
+
+//Domain extension following COST732 guidelines
+x0 $x_min; 
+x1 $x_max; 
+y0 $y_min;
+y1 $y_max; 
+z0 $z_min;
+
+//Number of cells per direction
+xn 122;
+yn 111;
+zn 28;
+
+vertices
+(
+   
+    ( $x0 $y0 $z0 ) //(0 0 930)
+    ( $x1 $y0 $z0 ) //(969 0 930)
+    ( $x1 $y1 $z0 ) //(969 870 930)
+    ( $x0 $y1 $z0 ) //(0 870 930)
+    ( $x0 $y0 $z1 ) //(0 0 1500)
+    ( $x1 $y0 $z1 ) //(969 0 1500)
+    ( $x1 $y1 $z1 ) //(969 870 1500)
+    ( $x0 $y1 $z1 ) //(0 870 1500) 
+
+);
+
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) ($xn $yn $zn) simpleGrading (1 1 4)
+);
+
+edges
+(
+);
+
+boundary
+(
+    outlet
+    {
+        type patch;
+        faces
+        (
+            (2 6 5 1)
+        );
+    }
+    sides
+    {
+        type symmetry;
+        faces
+        (
+            (1 5 4 0)
+            (3 7 6 2)
+        );
+    }
+    inlet
+    {
+        type patch;
+        faces
+        (
+            (0 4 7 3)
+        );
+    }
+    ground
+    {
+        type wall;
+        faces
+        (
+            (0 3 2 1)
+        );
+    }
+    top
+    {
+        type symmetry;
+        faces
+        (
+            (4 5 6 7)
+        );
+    }
+);
+
+mergePatchPairs
+(
+);
+
+
+// ************************************************************************* //
