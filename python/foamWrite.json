@@ -1,0 +1,7 @@
+{
+  "input": "z0.txt",
+  "writetoBC": "on",
+  "foamLocation": "0/nut",
+  "patch_list": ["WaterGreen"], 
+  "z0_list": [0.0002, 0.03] 
+}

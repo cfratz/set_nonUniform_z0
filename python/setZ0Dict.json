@@ -1,0 +1,22 @@
+{
+  "input_mesh": "TU_Delft/water_green.obj",
+  "input_pts": "Cf/complex/Cf_coords.xyz",
+  "format": "obj",
+  "landcover":
+    {
+      "Water": 0.0002,
+      "Green": 0.03
+    },
+  "switch_foamWrite": 
+   {
+      "switch": "on",
+      "writetoBC": "on",
+      "foamLocation": "0/nut",
+      "patch_list": ["terrain"]  
+   },
+  "switch_txtWrite":
+   { 
+      "switch": "on",
+      "output_file": "z0.txt" 
+   }
+}
