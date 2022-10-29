@@ -1,0 +1,74 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      epsilon;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [ 0 2 -3 0 0 0 0 ];
+
+#include "include/ABLConditions"
+
+internalField   uniform $turbulentEpsilon;
+
+boundaryField
+{
+    x0
+    {
+        type            symmetry;
+    }
+    y0
+    {
+        type            atmBoundaryLayerInletEpsilon;
+        z0              uniform 0.5;
+        flowDir         ( 0 1 0 );
+        zDir            ( 0 0 1 );
+        kappa           0.41;
+        Cmu             0.09;
+        Uref            4.97;
+        Zref            10;
+        zGround         uniform 1.95;
+        value           $internalField; 
+    }
+    x1
+    {
+        type            symmetry;
+    }
+    y1
+    {
+        type            zeroGradient;
+    }
+    terrain
+    {
+        type            epsilonz0WallFunction;
+        z0              uniform 0.5;
+        value           $internalField;
+    }
+    sky
+    {
+        type            symmetry;
+    }
+    Buildings
+    {
+        type            epsilonWallFunction;
+        value           $internalField;
+    }
+    WaterGreen
+    {
+        type            epsilonz0WallFunction;
+        z0              $z0watergreen;
+        value           $internalField;
+    }
+}
+
+
+// ************************************************************************* //

@@ -1,0 +1,246 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      sample;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+type sets;
+libs            ("libsampling.so");
+
+interpolationScheme cellPoint;
+
+setFormat       raw;
+
+sets
+(
+ lineX1 //terrain probe 8
+    {
+        type       lineUniform;
+        axis        z;
+        start   (360.37 562.65 1.952);
+        end     (360.37 562.65 32.25);
+        nPoints     200;
+    }
+
+ lineX2 //terrain probe 10
+    {
+        type       lineUniform;
+        axis        z;
+        start   (-388.857 402.961 1.95);
+        end     (-388.857 402.961 32.25);
+        nPoints     200;
+    }
+
+ lineX3 //terrain probe 21
+    {
+        type       lineUniform;
+        axis        z;
+        start   (230.402 303.391 1.952);
+        end     (230.402 303.391 32.25);
+        nPoints     200;
+    }
+
+ lineX4 //water probe 39
+    {
+        type       lineUniform;
+        axis        z;
+        start   (-260.8 175.64 1.95);
+        end     (-260.8 175.64 32.25);
+        nPoints     200;
+    }
+
+lineX5 //water probe 38
+    {
+        type       lineUniform;
+        axis        z;
+        start   (260.983 186.912 1.95);
+        end     (260.983 186.912 32.25);
+        nPoints     200;
+    }
+
+lineX6 //green probe 43
+    {
+        type       lineUniform;
+        axis        z;
+        start   (20.1739 113.648 1.95);
+        end     (20.1739 113.648 32.25);
+        nPoints     200;
+    }
+
+lineX7 //green probe 42
+    {
+        type       lineUniform;
+        axis        z;
+        start   (280.092 185.034 1.95);
+        end     (280.092 185.034 32.25);
+        nPoints     200;
+    }
+
+lineX8 //terrain probe 8
+    {
+        type       lineUniform;
+        axis        z;
+        start   (360.37 562.65 1.952);
+        end     (360.37 562.65 5.75);
+        nPoints     80;
+    }
+
+ lineX9 //terrain probe 10
+    {
+        type       lineUniform;
+        axis        z;
+        start   (-388.857 402.961 1.95);
+        end     (-388.857 402.961 5.75);
+        nPoints     80;
+    }
+
+ lineX10 //terrain probe 21
+    {
+        type       lineUniform;
+        axis        z;
+        start   (230.402 303.391 1.952);
+        end     (230.402 303.391 5.75);
+        nPoints     80;
+    }
+
+ lineX11 //water probe 39
+    {
+        type       lineUniform;
+        axis        z;
+        start   (-260.8 175.64 1.95);
+        end     (-260.8 175.64 5.75);
+        nPoints     80;
+    }
+
+lineX12 //water probe 38
+    {
+        type       lineUniform;
+        axis        z;
+        start   (260.983 186.912 1.95);
+        end     (260.983 186.912 5.75);
+        nPoints     80;
+    }
+
+lineX13 //green probe 43
+    {
+        type       lineUniform;
+        axis        z;
+        start   (20.1739 113.648 1.95);
+        end     (20.1739 113.648 5.75);
+        nPoints     80;
+    }
+
+lineX14 //green probe 42
+    {
+        type       lineUniform;
+        axis        z;
+        start   (280.092 185.034 1.95);
+        end     (280.092 185.034 5.75);
+        nPoints     80;
+    }
+
+lineX15 //overlap1 probe 52
+   {
+        type       lineUniform;
+        axis        z;
+        start   (-304.759 671.569 1.95);
+        end     (-304.759 671.569 5.95);
+        nPoints     80;
+   }
+
+lineX16 //overlap2 probe 53
+  {
+        type       lineUniform;
+        axis        z;
+        start   (444.945 499.244 1.95);
+        end     (444.945 499.244 5.95);
+        nPoints     80;
+  }
+
+lineX17 //overlap3 probe 54
+  {
+        type       lineUniform;
+        axis        z;
+        start   (-297.593 685.235 1.95);
+        end     (-297.593 685.235 5.95);
+        nPoints     80;
+  }
+lineX18 //overlap4 probe 55
+  {
+        type       lineUniform;
+        axis        z;
+        start   (-230.698 840.227 1.95);
+        end     (-230.698 840.227 5.95);
+        nPoints     80;
+  }
+lineX19 //overlap5 probe 56
+  {
+        type       lineUniform;
+        axis        z;
+        start   (228.013 782.927 1.95);
+        end     (228.013 782.927 5.95);
+        nPoints     80;
+  }
+
+lineX20 //overlap6 probe 57
+  {
+        type       lineUniform;
+        axis        z;
+        start   (-290.903 699.325 1.952);
+        end     (-290.903 699.325 5.95);
+        nPoints     80;
+  }
+
+lineX21 //overlap7 probe 58
+  {
+        type       lineUniform;
+        axis        z;
+        start   (238.525 791.381 1.95);
+        end     (238.525 791.381 5.95);
+        nPoints     80;
+  }
+
+lineX22 //overlap8 probe 59
+  {
+        type       lineUniform;
+        axis        z;
+        start   (287.263 468.246 1.95);
+        end     (287.263 468.246 5.95);
+        nPoints     80;
+  }
+
+lineX23 //overlap9 probe 60
+  {
+        type       lineUniform;
+        axis        z;
+        start   (-210.629 890.952 1.952);
+        end     (-210.629 890.952 5.95);
+        nPoints     80;
+  }
+
+lineX24 //overlap10 probe 61
+  {
+        type       lineUniform;
+        axis        z;
+        start   (455.457 511.456 1.952);
+        end     (455.457 511.456 5.95);
+        nPoints     80;
+  }
+ );
+
+
+fields          (U epsilon nut p k);
+
+
+// ************************************************************************* //
