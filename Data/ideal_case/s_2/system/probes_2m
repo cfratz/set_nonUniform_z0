@@ -1,0 +1,34 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+Description
+    Writes out values of fields from cells nearest to specified locations.
+
+\*---------------------------------------------------------------------------*/
+
+#includeEtc "caseDicts/postProcessing/probes/probes.cfg"
+
+fields (p U epsilon k);
+
+interpolationScheme cell;
+
+probeLocations
+(
+    (121.125 217.5 932)
+    (121.125 652.5 932)
+    (363.375 435 932)
+    (605.625 435 932)
+    (847.875 435 932)
+    (363.375 217.5 932)
+    (363.375 652.5 932)
+    (605.625 217.5 932)
+    (605.625 652.5 932)
+    (847.875 217.5 932)
+    (847.875 652.5 932)
+);
+
+// ************************************************************************* //
