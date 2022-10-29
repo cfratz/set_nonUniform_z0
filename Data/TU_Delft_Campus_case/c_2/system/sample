@@ -1,0 +1,190 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  7
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      sample;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+type sets;
+libs            ("libsampling.so");
+
+interpolationScheme cellPoint;
+
+setFormat       raw;
+
+sets
+(
+ lineX1 //Probe 52 terrain
+    {
+        type      lineUniform;
+	axis         z;
+	start     (324.055 -226.341 1.95);
+	end       (324.055 -226.341 5.75);
+	nPoints      40;
+    }
+ lineX2  //Probe 53 terrain
+    {
+        type      lineUniform;
+        axis        z;
+        start     (324.055 -226.341 1.95);	
+	end       (324.055 -226.341 32.25);
+	nPoints   200;
+    }
+ lineX3 //Probe 54 water
+    {
+        type      lineUniform;
+        axis        z;
+        start     (287.559 -256.164 1.95);
+        end       (287.559 -256.164 5.75);
+        nPoints     40;
+    }
+ lineX4  //Probe 55 water
+    {
+	type      lineUniform;
+	axis        z;
+	start     (287.559 -256.164 1.95);
+	end       (287.559 -256.164 32.25);
+	nPoints      200;
+   }
+
+ lineX5 //terrain probe 8
+    {
+        type       lineUniform;
+        axis        z;
+        start   (360.37 562.65 1.95);
+        end     (360.37 562.65 32.25);
+        nPoints     200;
+    }
+
+ lineX6 //terrain probe 10
+    {
+        type       lineUniform;
+        axis        z;
+        start   (-388.857 402.961 1.95);
+        end     (-388.857 402.961 32.25);
+        nPoints     200;
+    }
+
+ lineX7 //terrain probe 21
+    {
+        type       lineUniform;
+        axis        z;
+        start   (230.402 303.391 1.95);
+        end     (230.402 303.391 32.25);
+        nPoints     200;
+    }
+
+ lineX8 //water probe 39
+    {
+        type       lineUniform;
+        axis        z;
+        start   (-260.8 175.64 1.95);
+        end     (-260.8 175.64 32.25);
+        nPoints     200;
+    }
+
+lineX9 //water probe 38
+    {
+        type       lineUniform;
+        axis        z;
+        start   (260.983 186.912 1.95);
+        end     (260.983 186.912 32.25);
+        nPoints     200;
+    }
+
+lineX10 //green probe 43
+    {
+        type       lineUniform;
+        axis        z;
+        start   (20.1739 113.648 1.95);
+        end     (20.1739 113.648 32.25);
+        nPoints     200;
+    }
+
+lineX11 //green probe 42
+    {
+        type       lineUniform;
+        axis        z;
+        start   (280.092 185.034 1.95);
+        end     (280.092 185.034 32.25);
+        nPoints     200;
+    }
+
+lineX12 //terrain probe 8
+    {
+        type       lineUniform;
+        axis        z;
+        start   (360.37 562.65 1.95);
+        end     (360.37 562.65 5.75);
+        nPoints     30;
+    }
+
+ lineX13 //terrain probe 10
+    {
+        type       lineUniform;
+        axis        z;
+        start   (-388.857 402.961 1.95);
+        end     (-388.857 402.961 5.75);
+        nPoints     30;
+    }
+
+ lineX14 //terrain probe 21
+    {
+        type       lineUniform;
+        axis        z;
+        start   (230.402 303.391 1.95);
+        end     (230.402 303.391 5.75);
+        nPoints     30;
+    }
+
+ lineX15 //water probe 39
+    {
+        type       lineUniform;
+        axis        z;
+        start   (-260.8 175.64 1.95);
+        end     (-260.8 175.64 5.75);
+        nPoints     30;
+    }
+
+lineX16 //water probe 38
+    {
+        type       lineUniform;
+        axis        z;
+        start   (260.983 186.912 1.95);
+        end     (260.983 186.912 5.75);
+        nPoints     30;
+    }
+
+lineX17 //green probe 43
+    {
+        type       lineUniform;
+        axis        z;
+        start   (20.1739 113.648 1.95);
+        end     (20.1739 113.648 5.75);
+        nPoints     30;
+    }
+
+lineX18 //green probe 42
+    {
+        type       lineUniform;
+        axis        z;
+        start   (280.092 185.034 1.95);
+        end     (280.092 185.034 5.75);
+        nPoints     30;
+    }
+ );
+
+fields          (U epsilon nut p k);
+
+
+// ************************************************************************* //
