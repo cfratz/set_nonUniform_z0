@@ -1,6 +1,6 @@
 setZ0:
 
-Aplication for setting nonUniform z0 to a patch(C++). 
+Aplication for setting nonUniform z0 to a patch(C++). Part of thesis submitted to the Delft Univerity of Technology in partial fulfillment of the requirements for the degree of Master of Science in Geomatics.
 Author: Christina Fratzeskou
 
 Tested on OpenFoam v7 on Ubuntu 18.04LTS on Windows10.
@@ -25,8 +25,9 @@ Input:
 - A .mtl file with landcover classification
 
 Example usage:
-  Setting z0 to a ground patch:
+Linux shell command:
+  - Setting non uniform z0 to a ground patch:
   setZ0 0/nut -entry boundaryField.terrain.z0 -setZ0Ground terrain [optional] -setZ0NoGeom 0.5 -writeCoords -writeZ0 -exportToVtk
 
-  Set z0 to inlet patch:
+  - Set non uniform z0 to the inlet patch:
   setZ0 0/epsilon -entry boundaryField.inlet.z0 -setZ0Inlet inlet [optional] -setParams -writeCoords -writeZ0 -exportToVtk
